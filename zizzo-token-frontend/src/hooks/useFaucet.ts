@@ -1,40 +1,36 @@
 import { toast } from "sonner";
 import { useAppKitAccount } from "@reown/appkit/react";
-import { ethers } from "ethers";
 import { useWriteContract } from "./specific/useWrite";
 
-export const useTransfer = () => {
-  const { getTransfer } = useWriteContract();
+export const useFaucet = () => {
+  const { getRequestToken } = useWriteContract();
   const { address } = useAppKitAccount();
 
-  const transfer = async (to: string, amount: number): Promise<boolean> => {
+  const requestToken = async (): Promise<boolean> => {
     if (!address) {
       toast.error("Wallet Not Connected");
       return false;
     }
 
-    const toastId = toast.loading("Transferring...");
+    const toastId = toast.loading("Requesting Tokens...");
 
     try {
-      // Convert amount to wei (1 token = 10^18 wei)
-      const amountInWei = ethers.parseEther(amount.toString());
-
-      const result = await getTransfer(to, amountInWei);
+      const result = await getRequestToken();
 
       if (!result.success) {
-        toast.error(`Transfer Failed: ${result.error}`, {
+        toast.error(`Request Failed: ${result.error}`, {
           id: toastId,
         });
         return false;
       } else {
-        toast.success("Transfer Successful", {
+        toast.success("Tokens Requested Successfully!", {
           id: toastId,
         });
         return true;
       }
     } catch (error) {
       toast.error(
-        `Invalid amount: ${
+        `Unable to request: ${
           error instanceof Error ? error.message : "Unknown error"
         }`,
         {
@@ -45,5 +41,5 @@ export const useTransfer = () => {
     }
   };
 
-  return { transfer };
+  return { requestToken };
 };

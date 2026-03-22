@@ -1,53 +1,54 @@
-// import type { TokenData } from "@/hooks/useContract";
-
 import { useReadContract } from "@/hooks/specific/useRead";
 import { ethers } from "ethers";
 import { useEffect, useState } from "react";
-
-// interface Props {
-//   data: TokenData;
-// }
+import { useWallet } from "@/context/WalletContext";
 
 export default function TokenInfo() {
   const [name, setName] = useState<string | null>(null);
   const [symbol, setSymbol] = useState<string | null>(null);
   const [totalSupply, setTotalSupply] = useState<number>(0);
   const [maxSupply, setMaxSupply] = useState<number>(0);
-  const [owner, setOwner] = useState<string>(null);
+  const [owner, setOwner] = useState<string | null>(null);
+  const [balance, setBalance] = useState<string>("0");
 
-  const { getSymbol, getName, getTotalSupply, getMaxSupply, getOwner } =
+  const { getSymbol, getName, getTotalSupply, getMaxSupply, getOwner, getBalance } =
     useReadContract();
+  const { address } = useWallet();
 
   useEffect(() => {
-    // getSymbol
     const getTokenSymbol = async () => {
-      const symbol = await getSymbol();
-      setSymbol(symbol);
+      try {
+        const symbol = await getSymbol();
+        setSymbol(symbol);
+      } catch (e) {}
     };
 
-    // getName
     const getTokenName = async () => {
-      const name = await getName();
-      setName(name);
+      try {
+        const name = await getName();
+        setName(name);
+      } catch (e) {}
     };
 
-    // get Total Supply
     const getTotalSupplyFn = async () => {
-      const totalSupply = await getTotalSupply();
-      setTotalSupply(totalSupply);
+      try {
+        const totalSupply = await getTotalSupply();
+        setTotalSupply(totalSupply);
+      } catch (e) {}
     };
 
-    // get Max Supply
     const getMaxSupplyFn = async () => {
-      const maxSupply = await getMaxSupply();
-
-      setMaxSupply(maxSupply);
+      try {
+        const maxSupply = await getMaxSupply();
+        setMaxSupply(maxSupply);
+      } catch (e) {}
     };
 
     const getOwnerFn = async () => {
-      const owner = await getOwner();
-
-      setOwner(owner);
+      try {
+        const owner = await getOwner();
+        setOwner(owner);
+      } catch (e) {}
     };
 
     getTokenName();
@@ -55,20 +56,42 @@ export default function TokenInfo() {
     getTotalSupplyFn();
     getMaxSupplyFn();
     getOwnerFn();
-  }, []);
+  }, [getSymbol, getName, getTotalSupply, getMaxSupply, getOwner]);
+
+  useEffect(() => {
+    const fetchBalance = async () => {
+      if (!address) {
+        setBalance("0");
+        return;
+      }
+      try {
+        const bal = await getBalance(address);
+        setBalance(ethers.formatEther(bal));
+      } catch (e) {
+        setBalance("0");
+      }
+    };
+    
+    fetchBalance();
+  }, [address, getBalance]);
 
   const items = [
-    { label: "Token Name", value: name },
-    { label: "Symbol", value: symbol },
+    { label: "Token Name", value: name || "-" },
+    { label: "Symbol", value: symbol || "-" },
     {
       label: "Total Supply",
-      value: `${ethers.formatEther(totalSupply)} ${symbol}`,
+      value: totalSupply ? `${ethers.formatEther(totalSupply)} ${symbol || ""}` : "-",
     },
     {
       label: "Max Supply",
-      value: `${ethers.formatEther(maxSupply)} ${symbol}`,
+      value: maxSupply ? `${ethers.formatEther(maxSupply)} ${symbol || ""}` : "-",
     },
-    { label: "Contract Owner", value: `${owner}`, mono: true },
+    { label: "Contract Owner", value: owner || "-", mono: true },
+    { 
+      label: "Your Balance", 
+      value: address ? `${balance} ${symbol || ""}` : "Connect Wallet",
+      highlight: true
+    },
   ];
 
   return (
@@ -80,7 +103,7 @@ export default function TokenInfo() {
         {items.map((item) => (
           <div
             key={item.label}
-            className="bg-card rounded-lg p-4 shadow-sm border border-border"
+            className={`bg-card rounded-lg p-4 shadow-sm border border-border ${item.highlight ? 'ring-1 ring-primary/50 bg-primary/5' : ''}`}
           >
             <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
               {item.label}
@@ -88,7 +111,7 @@ export default function TokenInfo() {
             <p
               className={`font-medium text-foreground ${
                 item.mono ? "font-mono text-sm break-all" : ""
-              }`}
+              } ${item.highlight && address ? "text-primary font-bold" : ""}`}
             >
               {item.value}
             </p>

@@ -3,31 +3,31 @@ import { useAppKitAccount } from "@reown/appkit/react";
 import { ethers } from "ethers";
 import { useWriteContract } from "./specific/useWrite";
 
-export const useTransfer = () => {
-  const { getTransfer } = useWriteContract();
+export const useMint = () => {
+  const { getMint } = useWriteContract();
   const { address } = useAppKitAccount();
 
-  const transfer = async (to: string, amount: number): Promise<boolean> => {
+  const mint = async (to: string, amount: number): Promise<boolean> => {
     if (!address) {
       toast.error("Wallet Not Connected");
       return false;
     }
 
-    const toastId = toast.loading("Transferring...");
+    const toastId = toast.loading("Minting...");
 
     try {
       // Convert amount to wei (1 token = 10^18 wei)
       const amountInWei = ethers.parseEther(amount.toString());
 
-      const result = await getTransfer(to, amountInWei);
+      const result = await getMint(to, amountInWei);
 
       if (!result.success) {
-        toast.error(`Transfer Failed: ${result.error}`, {
+        toast.error(`Minting Failed: ${result.error}`, {
           id: toastId,
         });
         return false;
       } else {
-        toast.success("Transfer Successful", {
+        toast.success("Minting Successful", {
           id: toastId,
         });
         return true;
@@ -45,5 +45,5 @@ export const useTransfer = () => {
     }
   };
 
-  return { transfer };
+  return { mint };
 };

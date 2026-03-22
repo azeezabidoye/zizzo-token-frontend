@@ -3,11 +3,8 @@ import TokenInfo from "@/components/TokenInfo";
 import MintForm from "@/components/MintForm";
 import TransferForm from "@/components/TransferForm";
 import Faucet from "@/components/Faucet";
-import { useTokenContract } from "@/hooks/useContract";
 
 export default function Index() {
-  const { tokenData, mint, transfer, requestToken } = useTokenContract();
-
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -22,14 +19,9 @@ export default function Index() {
             Actions
           </h2>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <MintForm onMint={mint} />
-            <TransferForm onTransfer={transfer} />
-            {/* <Faucet
-              onRequest={requestToken}
-              cooldownMs={tokenData.faucetCooldown * 1000}
-              faucetAmount={tokenData.faucetAmount}
-              symbol={tokenData.symbol}
-            /> */}
+            <MintForm />
+            <TransferForm />
+            <Faucet />
           </div>
         </section>
       </main>

@@ -1,56 +1,62 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useWallet } from "@/context/WalletContext";
 import Timer from "./Timer";
+import { useReadContract } from "@/hooks/specific/useRead";
+import { useFaucet } from "@/hooks/useFaucet";
+import { ethers } from "ethers";
 
-interface Props {
-  onRequest: () => Promise<string>;
-  cooldownMs: number;
-  faucetAmount: string;
-  symbol: string;
-}
-
-// Per-wallet cooldown storage (in-memory)
-const cooldowns: Record<string, number> = {};
-
-export default function Faucet({
-  onRequest,
-  cooldownMs,
-  faucetAmount,
-  symbol,
-}: Props) {
+export default function Faucet() {
   const { isConnected, address } = useWallet();
-  const [status, setStatus] = useState<{
-    type: "success" | "error";
-    msg: string;
-  } | null>(null);
   const [loading, setLoading] = useState(false);
-  const [, forceUpdate] = useState(0);
+  
+  const [faucetAmount, setFaucetAmount] = useState("0");
+  const [cooldownEnd, setCooldownEnd] = useState(0);
+  const [symbol, setSymbol] = useState("");
+  
+  const { getFaucetAmount, getFaucetCooldown, getLastRequestTime, getSymbol } = useReadContract();
+  const { requestToken } = useFaucet();
 
-  const cooldownEnd = address ? cooldowns[address] || 0 : 0;
+  const fetchFaucetData = useCallback(async () => {
+    try {
+      const sym = await getSymbol();
+      setSymbol(sym);
+
+      const amount = await getFaucetAmount();
+      setFaucetAmount(ethers.formatEther(amount));
+
+      if (address) {
+        const lastTime = await getLastRequestTime(address);
+        const cooldown = await getFaucetCooldown();
+        
+        const lastTimeMs = Number(lastTime) * 1000;
+        const cooldownMs = Number(cooldown) * 1000;
+
+        if (lastTimeMs > 0) {
+          setCooldownEnd(lastTimeMs + cooldownMs);
+        } else {
+          setCooldownEnd(0);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }, [address, getSymbol, getFaucetAmount, getLastRequestTime, getFaucetCooldown]);
+
+  useEffect(() => {
+    fetchFaucetData();
+  }, [fetchFaucetData]);
+
   const isCooling = cooldownEnd > Date.now();
 
-  const handleRequest = useCallback(async () => {
+  const handleRequest = async () => {
     if (!address) return;
-    // if (cooldowns[address] && cooldowns[address] > Date.now()) {
-    //   setStatus({
-    //     type: "error",
-    //     msg: "Please wait for the cooldown to finish",
-    //   });
-    //   return;
-    // }
-    // setStatus(null);
-    // setLoading(true);
-    // try {
-    //   const msg = await onRequest();
-    //   cooldowns[address] = Date.now() + cooldownMs;
-    //   setStatus({ type: "success", msg });
-    //   forceUpdate((n) => n + 1);
-    // } catch (err: any) {
-    //   setStatus({ type: "error", msg: err.message });
-    // } finally {
-    //   setLoading(false);
-    // }
-  }, [address, onRequest, cooldownMs]);
+    setLoading(true);
+    const success = await requestToken();
+    if (success) {
+      await fetchFaucetData();
+    }
+    setLoading(false);
+  };
 
   return (
     <div
@@ -75,7 +81,7 @@ export default function Faucet({
         </div>
       ) : (
         <div className="space-y-2">
-          {!cooldowns[address!] && (
+          {cooldownEnd === 0 && (
             <p className="text-sm text-muted-foreground">
               🎉 You haven't requested tokens yet — go ahead!
             </p>
@@ -88,16 +94,6 @@ export default function Faucet({
             {loading ? "Requesting..." : `Request ${faucetAmount} ${symbol}`}
           </button>
         </div>
-      )}
-
-      {status && (
-        <p
-          className={`text-sm mt-3 ${
-            status.type === "success" ? "text-green-400" : "text-destructive"
-          }`}
-        >
-          {status.msg}
-        </p>
       )}
     </div>
   );

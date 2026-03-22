@@ -4,8 +4,6 @@ import { useCallback } from "react";
 import { BigNumberish } from "ethers";
 import { ErrorDecoder } from "ethers-decode-error";
 
-import { toast } from "react-toastify";
-
 const errorDecoder = ErrorDecoder.create();
 
 export const useWriteContract = () => {
@@ -18,30 +16,18 @@ export const useWriteContract = () => {
       amount: BigNumberish,
     ): Promise<{ success: boolean; error?: string }> => {
       if (!address) {
-        toast.error("Wallet Not Connected");
         return { success: false, error: "Wallet Not Connected" };
       }
       if (!tokenContract) {
-        toast.error("Contract not Found");
         return { success: false, error: "Contract not Found" };
       }
 
-      console.log("the address from write", address);
-
       try {
-        const tranferTx = await tokenContract.transfer(to, amount);
-
-        const receipt = await tranferTx.wait();
-        console.log("receipt", tranferTx);
-
-        console.log("dddd", receipt.status === 1);
-
+        const transferTx = await tokenContract.transfer(to, amount);
+        const receipt = await transferTx.wait();
         return { success: receipt.status === 1 };
       } catch (error) {
         const decodedError = await errorDecoder.decode(error);
-        console.log(decodedError);
-
-        toast.error(decodedError.reason);
         return {
           success: false,
           error: decodedError.reason || "Unknown error",
@@ -51,5 +37,56 @@ export const useWriteContract = () => {
     [tokenContract, address],
   );
 
-  return { getTransfer };
+  const getMint = useCallback(
+    async (
+      to: string,
+      amount: BigNumberish,
+    ): Promise<{ success: boolean; error?: string }> => {
+      if (!address) {
+        return { success: false, error: "Wallet Not Connected" };
+      }
+      if (!tokenContract) {
+        return { success: false, error: "Contract not Found" };
+      }
+
+      try {
+        const mintTx = await tokenContract.mint(to, amount);
+        const receipt = await mintTx.wait();
+        return { success: receipt.status === 1 };
+      } catch (error) {
+        const decodedError = await errorDecoder.decode(error);
+        return {
+          success: false,
+          error: decodedError.reason || "Unknown error",
+        };
+      }
+    },
+    [tokenContract, address],
+  );
+
+  const getRequestToken = useCallback(
+    async (): Promise<{ success: boolean; error?: string }> => {
+      if (!address) {
+        return { success: false, error: "Wallet Not Connected" };
+      }
+      if (!tokenContract) {
+        return { success: false, error: "Contract not Found" };
+      }
+
+      try {
+        const requestTx = await tokenContract.requestToken();
+        const receipt = await requestTx.wait();
+        return { success: receipt.status === 1 };
+      } catch (error) {
+        const decodedError = await errorDecoder.decode(error);
+        return {
+          success: false,
+          error: decodedError.reason || "Unknown error",
+        };
+      }
+    },
+    [tokenContract, address],
+  );
+
+  return { getTransfer, getMint, getRequestToken };
 };

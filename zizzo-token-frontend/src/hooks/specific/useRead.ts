@@ -1,4 +1,5 @@
 import { useTokenContract } from "../useContract";
+import { BigNumberish } from "ethers";
 
 export const useReadContract = () => {
   const tokenContract = useTokenContract();
@@ -8,28 +9,55 @@ export const useReadContract = () => {
     return symbol;
   };
 
-  //   get token name
   const getName = async () => {
     const name = await tokenContract.name();
     return name;
   };
-  // get total supply
+
   const getTotalSupply = async () => {
     const totalSupply = await tokenContract.totalSupply();
     return totalSupply;
   };
 
-  // get max supply
   const getMaxSupply = async () => {
     const maxSupply = await tokenContract.MAX_SUPPLY();
     return maxSupply;
   };
 
-  // get Owner
   const getOwner = async () => {
     const owner = await tokenContract.owner();
     return owner;
   };
 
-  return { getSymbol, getName, getTotalSupply, getMaxSupply, getOwner };
+  const getBalance = async (address: string) => {
+    const balance = await tokenContract.balanceOf(address);
+    return balance;
+  };
+
+  const getFaucetAmount = async () => {
+    const amount = await tokenContract.FAUCET_AMOUNT();
+    return amount;
+  };
+
+  const getFaucetCooldown = async () => {
+    const cooldown = await tokenContract.FAUCET_COOLDOWN();
+    return cooldown;
+  };
+
+  const getLastRequestTime = async (address: string) => {
+    const time = await tokenContract.lastRequestTime(address);
+    return time;
+  };
+
+  return { 
+    getSymbol, 
+    getName, 
+    getTotalSupply, 
+    getMaxSupply, 
+    getOwner,
+    getBalance,
+    getFaucetAmount,
+    getFaucetCooldown,
+    getLastRequestTime
+  };
 };
