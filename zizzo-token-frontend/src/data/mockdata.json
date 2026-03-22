@@ -1,0 +1,15 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "ZizzoToken",
+  "sourceName": "contracts/ZizzoToken.sol",
+  "mockData": {
+    "name": "ZizzoToken",
+    "symbol": "ZZT",
+    "decimals": 18,
+    "totalSupply": "5000000000000000000000000",
+    "maxSupply": "10000000000000000000000000",
+    "owner": "0x1234567890abcdef1234567890abcdef12345678",
+    "faucetAmount": "100000000000000000000",
+    "faucetCooldown": 86400
+  }
+}
